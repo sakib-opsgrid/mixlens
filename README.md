@@ -1,75 +1,57 @@
 # MixLens — Professional Audio Analyzer
 
-A professional-grade, browser-based audio analysis tool for musicians, producers, and audio engineers. Upload your mix or master and get detailed feedback on loudness, frequency balance, dynamic range, stereo imaging, clipping, and streaming platform readiness — all processed locally in your browser.
+**by Nickson Rizvi · 2026**
 
-**No audio data is ever uploaded to any server.**
-
----
-
-## Features
-
-- **Clipping Detection** — Sample-accurate detection with percentage reporting
-- **Loudness Analysis** — RMS level measurement with streaming target comparison
-- **Dynamic Range** — Crest factor and compression assessment
-- **Frequency Balance** — 7-band spectral analysis (Sub Bass → Air) with issue detection
-- **Stereo Correlation** — Mono compatibility check
-- **Waveform Visualisation** — Full-resolution waveform with clipping threshold overlay
-- **Frequency Spectrum** — Log-scale FFT spectrum with band shading
-- **Streaming Platform Targets** — Compare against Spotify, YouTube, Apple Music, Amazon Music, Tidal, SoundCloud
-- **Overall Mix Score** — Weighted score (0–100) based on all metrics
-- **Actionable Suggestions** — Prioritised, specific fix recommendations with tool suggestions
+A high-accuracy, browser-based professional audio analysis tool for musicians, producers, and audio engineers. Zero server uploads — all processing runs locally in your browser using the Web Audio API.
 
 ---
 
-## Supported File Formats
+## What It Analyzes
 
-| Format | Extension |
-|--------|-----------|
-| WAV    | `.wav`    |
-| MP3    | `.mp3`    |
-| FLAC   | `.flac`   |
-| AIFF   | `.aiff`, `.aif` |
-| OGG    | `.ogg`    |
+| Metric | Method | Accuracy |
+|--------|--------|----------|
+| Integrated Loudness | ITU-R BS.1770-4 LUFS with K-weighting + absolute/relative gating | High |
+| True-Peak | Cubic interpolation (4× oversampling estimate) | Good |
+| Dynamic Range | EBU R128 DR — percentile-based block analysis | High |
+| Stereo Correlation | Pearson coefficient (Bessel-corrected) | High |
+| Clipping | Sample-accurate threshold detection at 0.9998 | Exact |
+| Frequency Balance | 8192-point Hann-windowed FFT, averaged | High |
+| Mix Score | Weighted multi-factor scoring (0–100) | — |
+
+---
+
+## Supported Formats
+
+WAV · MP3 · AIFF · OGG · FLAC *(FLAC support depends on browser — Chrome recommended)*
 
 ---
 
 ## Getting Started
 
-### Option 1 — Open Directly (Simplest)
-
-No build step required. Just open `index.html` in any modern browser:
+### Open directly (no build step)
 
 ```bash
-# Clone the repository
 git clone https://github.com/YOUR_USERNAME/mixlens.git
 cd mixlens
-
-# Open in browser (macOS)
-open index.html
-
-# Open in browser (Linux)
-xdg-open index.html
-
-# Open in browser (Windows)
-start index.html
+open index.html          # macOS
+xdg-open index.html      # Linux
+start index.html         # Windows
 ```
 
-### Option 2 — Local Development Server
-
-For a better development experience (avoids CORS issues when extending the tool):
+### Local dev server (recommended for best results)
 
 ```bash
-# Using Python 3 (built-in)
+# Python 3
 python3 -m http.server 8080
 
-# Using Node.js / npx
+# Node.js
 npx serve .
 
-# Using PHP
+# PHP
 php -S localhost:8080
 ```
 
-Then open `http://localhost:8080` in your browser.
+Then open `http://localhost:8080`
 
 ---
 
@@ -77,177 +59,83 @@ Then open `http://localhost:8080` in your browser.
 
 ```
 mixlens/
-├── index.html          # Main HTML — structure and layout
+├── index.html          # Markup + layout
 ├── css/
-│   └── style.css       # All styles — dark theme, components, responsive
+│   └── style.css       # Dark premium theme, all components
 ├── js/
-│   ├── analyzer.js     # Core audio analysis engine (Web Audio API + FFT)
-│   ├── ui.js           # DOM rendering and canvas drawing
-│   └── app.js          # Application controller — wires everything together
-└── README.md           # This file
+│   ├── analyzer.js     # Signal processing engine (FFT, LUFS, DR, etc.)
+│   ├── ui.js           # DOM rendering + Canvas drawing
+│   └── app.js          # Controller — file I/O, state, error handling
+└── README.md
 ```
-
-### Module Responsibilities
-
-| File | Responsibility |
-|------|---------------|
-| `analyzer.js` | Audio decoding, FFT computation, metric calculation, issue generation, scoring algorithm |
-| `ui.js` | All DOM manipulation, canvas drawing (waveform + spectrum), metric card rendering |
-| `app.js` | File input handling, drag-and-drop, loading states, resize handling, module orchestration |
 
 ---
 
-## How It Works
+## Key Technical Details
 
-### Analysis Pipeline
+### The `decodeAudioData` ArrayBuffer Fix
+The Web Audio API's `decodeAudioData()` **consumes (detaches) the ArrayBuffer** when called. If the decode fails and you retry, the buffer is gone. `app.js` solves this by slicing a copy before every decode attempt, and falling back to the callback form of the API for older browsers.
 
-```
-User drops file
-      ↓
-FileReader → ArrayBuffer
-      ↓
-Web Audio API → AudioBuffer (decoded PCM)
-      ↓
-Analyzer.analyze(buffer)
-   ├── Peak amplitude
-   ├── RMS loudness
-   ├── Dynamic range / crest factor
-   ├── Clipping detection (sample-accurate)
-   ├── Stereo correlation (Pearson coefficient)
-   ├── FFT spectrum (Cooley-Tukey, 4096-point, Hann window)
-   └── Per-band energy (7 bands, 20 Hz – 20 kHz)
-      ↓
-Issue generation → Score computation → Action plan
-      ↓
-UI rendering (DOM + Canvas)
-```
+### LUFS Measurement (ITU-R BS.1770-4)
+1. K-weighting filter applied to each channel (two-stage biquad: high-shelf pre-filter + 100 Hz high-pass)
+2. Mean-square computed per 400ms block with 75ms hop
+3. Absolute gate at −70 LUFS
+4. Relative gate at −10 LU below ungated mean
+5. Loudness = −0.691 + 10·log₁₀(gated mean square)
+
+### Dynamic Range (EBU R128 DR)
+Block-based analysis using 3-second windows. 20th-percentile peak and RMS across all blocks. More robust than simple crest factor.
 
 ### Scoring Algorithm
-
-The overall score starts at 100 and deductions are applied for:
-
-| Issue | Deduction |
-|-------|-----------|
-| Severe clipping (>1000 samples) | −25 |
-| Moderate clipping (>100 samples) | −15 |
-| Peak too close to 0 dBFS | −10 |
-| Loudness too quiet (<−22 dBFS) | −20 |
-| Loudness below target (<−18 dBFS) | −12 |
-| Over-compressed (>−8 dBFS) | −15 |
-| Severe dynamic range crush (<4 dB) | −15 |
-| Low stereo correlation (<0.3) | −10 |
-| Heavy/thin frequency band | −4 to −5 per band |
+Starts at 100, deductions applied for:
+- Clipping severity (up to −25)
+- True-peak level (up to −8)
+- LUFS loudness (too quiet or too loud, up to −22)
+- Dynamic range (up to −15)
+- Stereo correlation (up to −10)
+- Frequency balance (up to −3 per imbalanced band)
 
 ---
 
-## Streaming Loudness Targets
+## Streaming Targets Reference
 
-| Platform | LUFS Target | True-Peak Max |
-|----------|-------------|---------------|
-| Spotify | −14 LUFS | −1.0 dBFS |
-| YouTube | −14 LUFS | −1.0 dBFS |
-| Apple Music | −16 LUFS | −1.0 dBFS |
-| Amazon Music | −14 LUFS | −2.0 dBFS |
-| Tidal | −14 LUFS | −1.0 dBFS |
-| SoundCloud | −14 LUFS | −1.0 dBFS |
-
-> **Note:** MixLens uses RMS-based loudness measurement as an approximation of LUFS. For true integrated LUFS (ITU-R BS.1770-4) measurement, use a dedicated LUFS meter plugin in your DAW (e.g., Youlean Loudness Meter, iZotope Insight).
+| Platform | Integrated LUFS | True-Peak |
+|----------|----------------|-----------|
+| Spotify | −14 | −1.0 dBFS |
+| YouTube | −14 | −1.0 dBFS |
+| Apple Music | −16 | −1.0 dBFS |
+| Amazon Music | −14 | −2.0 dBFS |
+| Tidal | −14 | −1.0 dBFS |
+| SoundCloud | −14 | −1.0 dBFS |
 
 ---
 
 ## Browser Compatibility
 
-| Browser | Status |
-|---------|--------|
-| Chrome 90+ | ✓ Fully supported |
-| Firefox 90+ | ✓ Fully supported |
-| Edge 90+ | ✓ Fully supported |
-| Safari 14+ | ✓ Supported |
-| Opera 80+ | ✓ Supported |
-
-Requires: Web Audio API, FileReader API, Canvas API — all standard in modern browsers.
-
----
-
-## Privacy
-
-- All audio processing runs entirely in your browser using the Web Audio API.
-- No audio data, file names, or analysis results are sent to any server.
-- No tracking, no analytics, no cookies.
-- Works fully offline after the page loads (except Google Fonts — you can self-host if needed).
-
----
-
-## Extending MixLens
-
-### Adding a New Metric
-
-1. Compute the metric in `js/analyzer.js` inside the `analyze()` function.
-2. Add it to the returned report object.
-3. Add a new metric card in `index.html` (follow the existing `mc-peak` structure).
-4. Render it in `js/ui.js` inside `renderMetrics()` using `setMetric()`.
-
-### Adding a New Issue Type
-
-Open `js/analyzer.js` and add a new block inside `generateIssues()`:
-
-```javascript
-if (yourCondition) {
-  issues.push({
-    severity: 'warning',      // 'critical' | 'warning' | 'info' | 'good'
-    icon: '🎛️',
-    title: 'Your Issue Title',
-    desc: 'Detailed description of the problem.',
-    fix: 'Specific actionable fix.',
-  });
-}
-```
-
-### Changing the Colour Theme
-
-All colours are CSS custom properties in `css/style.css` under `:root`. Change `--accent` to update the primary highlight colour throughout the UI.
+| Browser | Status | Notes |
+|---------|--------|-------|
+| Chrome 90+ | ✓ Full | Recommended |
+| Firefox 90+ | ✓ Full | — |
+| Edge 90+ | ✓ Full | — |
+| Safari 14+ | ✓ Partial | FLAC may not decode |
+| Opera 80+ | ✓ Full | — |
 
 ---
 
 ## Known Limitations
 
-- **LUFS measurement** is approximated via RMS. True LUFS (ITU-R BS.1770) requires K-weighting filters and gating, which are not implemented. For mastering decisions, always verify with a proper LUFS meter.
-- **Very large files** (>200 MB, >20 min) may be slow to analyse depending on device hardware.
-- **True-peak** (inter-sample peak) detection requires oversampling and is not implemented. The peak reading reflects sample-level peak only.
-- **MP3 files** decoded via Web Audio may have slight pre-ringing artefacts at the start; this is normal codec behaviour.
+- True-peak uses cubic interpolation, not full 4× oversampled sinc filter (ITU-R BS.1770 Annex 2). Good approximation, not laboratory-grade.
+- LUFS is computed from a mono mix of all channels weighted equally. For multi-channel (surround) content, channel weights should differ per ITU spec.
+- FLAC decoding is browser-dependent. Chrome supports it; Safari does not.
 
 ---
 
-## Roadmap
+## Privacy
 
-- [ ] True LUFS measurement (ITU-R BS.1770-4 with K-weighting)
-- [ ] True-peak (inter-sample) detection via 4× oversampling
-- [ ] Stereo spectrogram (Mid/Side)
-- [ ] Export PDF report
-- [ ] Reference track comparison (A/B)
-- [ ] Genre-aware scoring presets (EDM, Pop, Classical, Hip-Hop)
-- [ ] Batch analysis (multiple files)
-
----
-
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you'd like to change.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/true-lufs`)
-3. Commit your changes (`git commit -m 'Add true LUFS measurement'`)
-4. Push to the branch (`git push origin feature/true-lufs`)
-5. Open a Pull Request
+No audio data is sent anywhere. No analytics, no tracking, no cookies.
 
 ---
 
 ## License
 
-MIT License — see `LICENSE` for details.
-
----
-
-## Acknowledgements
-
-Built with the Web Audio API and zero external dependencies (except Google Fonts for typography). The FFT implementation is a pure JavaScript Cooley-Tukey radix-2 DIT algorithm.
+MIT — © 2026 Nickson Rizvi

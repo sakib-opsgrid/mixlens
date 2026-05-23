@@ -1,220 +1,252 @@
 /**
- * MixLens — app.js
- * Main application controller.
- * Wires together file input, Web Audio decoding, analysis, and UI rendering.
+ * MixLens — app.js  |  by Nickson Rizvi 2026
+ * Application controller. Fixes decodeAudioData ArrayBuffer consumption.
  */
 
 'use strict';
 
 (() => {
 
-  // ── DOM refs ─────────────────────────────────────────────────
-  const dropZone      = document.getElementById('dropZone');
-  const fileInput     = document.getElementById('fileInput');
-  const loadingState  = document.getElementById('loadingState');
-  const loadingText   = document.getElementById('loadingText');
-  const results       = document.getElementById('results');
-  const btnReset      = document.getElementById('btnReset');
-  const waveformCanvas = document.getElementById('waveformCanvas');
-  const spectrumCanvas = document.getElementById('spectrumCanvas');
+  /* ── DOM ────────────────────────────────────── */
+  const uploadSection  = document.getElementById('uploadSection');
+  const loadingSection = document.getElementById('loadingSection');
+  const resultsSection = document.getElementById('resultsSection');
+  const dropZone       = document.getElementById('dropZone');
+  const fileInput      = document.getElementById('fileInput');
+  const loadingStep    = document.getElementById('loadingStep');
+  const loadingBar     = document.getElementById('loadingBar');
+  const dropError      = document.getElementById('dropError');
+  const btnNew         = document.getElementById('btnNew');
+  const waveCanvas     = document.getElementById('waveCanvas');
+  const specCanvas     = document.getElementById('specCanvas');
 
-  // ── State ────────────────────────────────────────────────────
+  /* ── State ──────────────────────────────────── */
   let audioCtx = null;
-  let currentFile = null;
-  let analysisReport = null;
+  let report   = null;
 
-  // ── Audio Context (lazy init) ────────────────────────────────
-  function getAudioContext() {
+  /* ── AudioContext ───────────────────────────── */
+  function getCtx() {
     if (!audioCtx || audioCtx.state === 'closed') {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint:'playback' });
     }
+    // Resume if suspended (browser autoplay policy)
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
 
-  // ── Loading Steps ────────────────────────────────────────────
+  /* ── Progress ───────────────────────────────── */
   const STEPS = [
-    'Reading file…',
-    'Decoding audio…',
-    'Analysing waveform…',
-    'Computing spectrum…',
-    'Scoring mix…',
-    'Building report…',
+    [5,  'Reading file…'],
+    [15, 'Decoding audio…'],
+    [30, 'Computing LUFS…'],
+    [50, 'Analysing spectrum…'],
+    [70, 'Scoring mix…'],
+    [85, 'Detecting issues…'],
+    [95, 'Building report…'],
+    [100,'Done.'],
   ];
 
-  function setLoading(stepIndex) {
-    loadingText.textContent = STEPS[Math.min(stepIndex, STEPS.length - 1)];
+  function setStep(idx) {
+    const [pct, label] = STEPS[Math.min(idx, STEPS.length-1)];
+    loadingStep.textContent = label;
+    loadingBar.style.width  = pct+'%';
   }
 
-  // ── File Handling ─────────────────────────────────────────────
+  /* ── File entry point ───────────────────────── */
   async function handleFile(file) {
     if (!file) return;
 
-    // Validate type
-    const allowed = ['audio/wav', 'audio/x-wav', 'audio/mpeg', 'audio/mp3',
-                     'audio/flac', 'audio/x-flac', 'audio/ogg', 'audio/aiff',
-                     'audio/x-aiff', 'audio/aif'];
-    const ext = file.name.split('.').pop().toLowerCase();
-    const allowedExts = ['wav','mp3','flac','ogg','aiff','aif'];
+    clearError();
 
-    if (!allowedExts.includes(ext)) {
-      showError(`Unsupported file type ".${ext}". Please use WAV, MP3, FLAC, AIFF, or OGG.`);
+    // Extension check
+    const ext = file.name.split('.').pop().toLowerCase();
+    const ok  = ['wav','mp3','aiff','aif','flac','ogg'];
+    if (!ok.includes(ext)) {
+      showError(`".${ext}" is not supported. Use WAV, MP3, FLAC, AIFF or OGG.`);
       return;
     }
 
-    currentFile = file;
+    // File size sanity (warn above 300 MB)
+    if (file.size > 300*1024*1024) {
+      showError('File is larger than 300 MB. Analysis may be slow.');
+    }
+
     showLoading();
 
     try {
-      setLoading(0);
-      const arrayBuffer = await readFileAsArrayBuffer(file);
+      setStep(0);
+      const rawBuffer = await readFile(file);
 
-      setLoading(1);
-      const ctx = getAudioContext();
-      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      setStep(1);
+      // ── KEY FIX ──────────────────────────────────────────────────
+      // decodeAudioData() CONSUMES (detaches) the ArrayBuffer.
+      // We must slice a copy BEFORE calling decode, so we still have
+      // the original bytes if we need them again.
+      const bufferCopy = rawBuffer.slice(0);
+      const ctx = getCtx();
 
-      setLoading(2);
-      await tick(); // yield to browser
+      let audioBuffer;
+      try {
+        // Modern promise-based API
+        audioBuffer = await ctx.decodeAudioData(bufferCopy);
+      } catch (decodeErr) {
+        // Some browsers need the old callback form; retry
+        audioBuffer = await decodeAudioDataFallback(ctx, rawBuffer.slice(0));
+      }
+      // ─────────────────────────────────────────────────────────────
 
-      setLoading(3);
-      const report = Analyzer.analyze(audioBuffer);
-      analysisReport = report;
-
-      setLoading(4);
+      setStep(2);
       await tick();
 
-      setLoading(5);
-      renderReport(report, file);
+      setStep(3);
+      await tick();
 
+      setStep(4);
+      const r = Analyzer.analyze(audioBuffer);
+      report = r;
+
+      setStep(5);
+      await tick();
+
+      setStep(6);
+      renderReport(r, file);
+
+      setStep(7);
     } catch (err) {
-      console.error('[MixLens] Analysis error:', err);
-      showError('Could not decode audio file. Make sure the file is not corrupt and is a supported format.');
+      console.error('[MixLens]', err);
+      const msg = err.message || String(err);
+      if (msg.toLowerCase().includes('decode') || msg.toLowerCase().includes('format')) {
+        showError('Could not decode audio. Ensure the file is not corrupt and is a valid audio format. FLAC may not be supported in all browsers — try WAV or MP3.');
+      } else {
+        showError(`Analysis failed: ${msg}`);
+      }
+      showUpload();
     }
   }
 
-  function readFileAsArrayBuffer(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = e => resolve(e.target.result);
-      reader.onerror = () => reject(new Error('FileReader failed'));
-      reader.readAsArrayBuffer(file);
+  /* ── Read file as ArrayBuffer ───────────────── */
+  function readFile(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = e => res(e.target.result);
+      r.onerror = () => rej(new Error('FileReader failed'));
+      r.readAsArrayBuffer(file);
     });
   }
 
-  function tick() {
-    return new Promise(r => setTimeout(r, 16));
+  /* ── Fallback decode (callback form) ─────────── */
+  function decodeAudioDataFallback(ctx, buf) {
+    return new Promise((res, rej) => {
+      ctx.decodeAudioData(buf, res, rej);
+    });
   }
 
-  // ── Render Report ────────────────────────────────────────────
-  function renderReport(report, file) {
-    UI.renderFileInfo(file, report.meta);
-    UI.renderScore(report.score);
-    UI.renderIssues(report.issues);
-    UI.renderMetrics(report.metrics);
-    UI.renderFreqBands(report.bands);
-    UI.renderActions(report.actions);
-    UI.renderPlatforms(report.platforms, report.metrics.rmsDb);
+  function tick() { return new Promise(r => setTimeout(r, 20)); }
+
+  /* ── Render ─────────────────────────────────── */
+  function renderReport(r, file) {
+    UI.renderFileInfo(file, r.meta);
+    UI.renderScore(r.score);
+    UI.renderQuickMetrics(r.m);
+    UI.renderFreqBands(r.bands);
+    UI.renderIssues(r.issues);
+    UI.renderActions(r.actions);
+    UI.renderPlatforms(r.platforms);
 
     showResults();
 
-    // Canvases need the element to be visible first
+    // Canvases only render correctly once visible
     requestAnimationFrame(() => {
-      UI.renderWaveform(waveformCanvas, report.visual.waveformData);
-      UI.renderSpectrum(spectrumCanvas, report.visual.freqs, report.visual.spectrum);
+      UI.renderWaveform(waveCanvas, r.visual.waveEnv, r.m.clippedPct);
+      UI.renderSpectrum(specCanvas, r.visual.freqs, r.visual.specDb);
     });
   }
 
-  // ── State Transitions ────────────────────────────────────────
+  /* ── State transitions ──────────────────────── */
+  function showUpload() {
+    uploadSection.classList.remove('hidden');
+    loadingSection.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    fileInput.value = '';
+    report = null;
+  }
+
   function showLoading() {
-    dropZone.classList.add('hidden');
-    results.classList.add('hidden');
-    loadingState.classList.remove('hidden');
+    uploadSection.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    loadingSection.classList.remove('hidden');
+    loadingBar.style.width = '0%';
   }
 
   function showResults() {
-    loadingState.classList.add('hidden');
-    results.classList.remove('hidden');
-    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    loadingSection.classList.add('hidden');
+    resultsSection.classList.remove('hidden');
   }
 
-  function showDropZone() {
-    results.classList.add('hidden');
-    loadingState.classList.add('hidden');
-    dropZone.classList.remove('hidden');
-    fileInput.value = '';
-    currentFile = null;
-    analysisReport = null;
+  /* ── Error display ──────────────────────────── */
+  function showError(msg) {
+    dropError.textContent = msg;
+    dropError.classList.remove('hidden');
   }
 
-  function showError(message) {
-    loadingState.classList.add('hidden');
-    dropZone.classList.remove('hidden');
-
-    // Show inline error
-    const existing = document.getElementById('errorMsg');
-    if (existing) existing.remove();
-
-    const err = document.createElement('p');
-    err.id = 'errorMsg';
-    err.style.cssText = 'color:#ff4d4d;font-size:13px;margin-top:1rem;';
-    err.textContent = '⚠ ' + message;
-    dropZone.querySelector('.drop-inner').appendChild(err);
-
-    setTimeout(() => err.remove(), 6000);
+  function clearError() {
+    dropError.textContent = '';
+    dropError.classList.add('hidden');
   }
 
-  // ── Drag & Drop ──────────────────────────────────────────────
+  /* ── Drag & Drop ────────────────────────────── */
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();
-    dropZone.classList.add('drag-over');
+    dropZone.classList.add('drag-active');
   });
 
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('drag-over');
+  ['dragleave','dragend'].forEach(ev => {
+    dropZone.addEventListener(ev, () => dropZone.classList.remove('drag-active'));
   });
 
   dropZone.addEventListener('drop', e => {
     e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer?.files?.[0];
-    if (file) handleFile(file);
+    dropZone.classList.remove('drag-active');
+    const f = e.dataTransfer?.files?.[0];
+    if (f) handleFile(f);
   });
 
-  dropZone.addEventListener('click', e => {
-    if (e.target === dropZone || e.target.closest('.drop-inner')) {
-      // Don't re-trigger if user clicked the label (it handles its own input)
-      if (!e.target.closest('label')) fileInput.click();
-    }
-  });
-
+  /* ── File input ─────────────────────────────── */
   fileInput.addEventListener('change', () => {
-    const file = fileInput.files?.[0];
-    if (file) handleFile(file);
+    const f = fileInput.files?.[0];
+    if (f) handleFile(f);
   });
 
-  // ── Reset ────────────────────────────────────────────────────
-  btnReset.addEventListener('click', showDropZone);
+  /* ── Drop zone click ────────────────────────── */
+  dropZone.addEventListener('click', e => {
+    if (!e.target.closest('label')) fileInput.click();
+  });
 
-  // ── Resize: re-draw canvases ─────────────────────────────────
+  dropZone.addEventListener('keydown', e => {
+    if (e.key==='Enter'||e.key===' ') { e.preventDefault(); fileInput.click(); }
+  });
+
+  /* ── Reset ──────────────────────────────────── */
+  btnNew.addEventListener('click', showUpload);
+
+  /* ── Resize: redraw canvases ─────────────────── */
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      if (analysisReport && !results.classList.contains('hidden')) {
-        UI.renderWaveform(waveformCanvas, analysisReport.visual.waveformData);
-        UI.renderSpectrum(spectrumCanvas, analysisReport.visual.freqs, analysisReport.visual.spectrum);
+      if (report && !resultsSection.classList.contains('hidden')) {
+        UI.renderWaveform(waveCanvas, report.visual.waveEnv, report.m.clippedPct);
+        UI.renderSpectrum(specCanvas, report.visual.freqs, report.visual.specDb);
       }
-    }, 200);
+    }, 150);
   });
 
-  // ── Keyboard accessibility for drop zone ─────────────────────
-  dropZone.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      fileInput.click();
-    }
+  /* ── Global drag-over on body (prevent browser open) ── */
+  document.body.addEventListener('dragover', e => e.preventDefault());
+  document.body.addEventListener('drop', e => {
+    e.preventDefault();
+    const f = e.dataTransfer?.files?.[0];
+    if (f && !loadingSection.classList.contains('hidden') === false) handleFile(f);
   });
-  dropZone.setAttribute('tabindex', '0');
-  dropZone.setAttribute('role', 'button');
-  dropZone.setAttribute('aria-label', 'Click or drag an audio file to analyse');
 
 })();

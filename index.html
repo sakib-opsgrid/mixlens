@@ -1,192 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MixLens — Professional Audio Analyzer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
 
-  <div class="grain-overlay" aria-hidden="true"></div>
-
-  <header class="site-header">
-    <div class="logo">
-      <span class="logo-mark" aria-hidden="true">◈</span>
-      <span class="logo-text">MixLens</span>
-    </div>
-    <p class="header-sub">Professional Audio Analysis Tool</p>
-  </header>
-
-  <main class="container">
-
-    <!-- DROP ZONE -->
-    <section class="drop-zone" id="dropZone" role="region" aria-label="Audio file upload">
-      <div class="drop-inner">
-        <div class="drop-icon" aria-hidden="true">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-            <circle cx="24" cy="24" r="23" stroke="currentColor" stroke-width="1"/>
-            <path d="M24 14v14M17 21l7-7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M14 34h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M2 11h3l2-7 4 14 3-9 2 2h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <p class="drop-title">Drop your audio file here</p>
-        <p class="drop-sub">WAV · AIFF · MP3 · FLAC · OGG supported</p>
-        <label class="btn-upload" for="fileInput">
-          Browse File
-          <input type="file" id="fileInput" accept=".wav,.mp3,.aiff,.aif,.flac,.ogg" hidden />
-        </label>
+        <span class="brand-name">MixLens</span>
+        <span class="brand-tag">PRO</span>
+      </div>
+      <div class="header-right">
+        <span class="header-credit">by <strong>Nickson Rizvi</strong></span>
+        <span class="header-year">2026</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- UPLOAD SECTION -->
+    <section class="upload-section" id="uploadSection">
+      <div class="upload-hero">
+        <p class="upload-label">AUDIO ANALYSIS ENGINE</p>
+        <h1 class="upload-title">Drop your track.<br>Get professional feedback.</h1>
+        <p class="upload-sub">Loudness · Dynamics · Frequency balance · Stereo imaging · Streaming readiness</p>
+      </div>
+
+      <div class="dropzone" id="dropZone" role="button" tabindex="0" aria-label="Drop audio file or click to browse">
+        <div class="dropzone-content">
+          <div class="dropzone-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <path d="M14 4v14M8 10l6-6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 22h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="dropzone-text">
+            <span class="dropzone-main">Drop audio file or <label class="browse-link" for="fileInput">browse</label></span>
+            <span class="dropzone-formats">WAV · AIFF · MP3 · FLAC · OGG</span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" accept=".wav,.mp3,.aiff,.aif,.flac,.ogg,audio/*" hidden/>
+        <div class="dropzone-error hidden" id="dropError"></div>
       </div>
     </section>
 
-    <!-- LOADING STATE -->
-    <section class="loading-state hidden" id="loadingState" aria-live="polite">
-      <div class="loading-ring" aria-hidden="true"></div>
-      <p class="loading-text" id="loadingText">Reading file…</p>
+    <!-- LOADING -->
+    <section class="loading-section hidden" id="loadingSection">
+      <div class="loading-wrap">
+        <div class="loading-bars" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <p class="loading-step" id="loadingStep">Initialising…</p>
+        <div class="loading-progress">
+          <div class="loading-bar" id="loadingBar"></div>
+        </div>
+      </div>
     </section>
 
     <!-- RESULTS -->
-    <section class="results hidden" id="results" aria-label="Analysis results">
+    <section class="results-section hidden" id="resultsSection">
 
-      <!-- File Info Bar -->
-      <div class="file-info-bar">
-        <div class="file-info-name" id="fileName">—</div>
-        <div class="file-info-meta">
-          <span id="fileDuration">—</span>
-          <span class="sep" aria-hidden="true">·</span>
-          <span id="fileSampleRate">—</span>
-          <span class="sep" aria-hidden="true">·</span>
-          <span id="fileChannels">—</span>
-          <span class="sep" aria-hidden="true">·</span>
-          <span id="fileSize">—</span>
+      <!-- Top bar -->
+      <div class="results-topbar">
+        <div class="results-file">
+          <span class="results-filename" id="rFileName">—</span>
+          <span class="results-meta" id="rMeta">—</span>
         </div>
-        <button class="btn-reset" id="btnReset" aria-label="Analyze another file">↺ Analyze another</button>
+        <button class="btn-new" id="btnNew">↺ New Analysis</button>
       </div>
 
-      <!-- Overall Score -->
-      <div class="score-banner">
-        <div class="score-left">
-          <div class="score-label">Overall Mix Score</div>
-          <div class="score-number" id="scoreNumber">—</div>
-          <div class="score-verdict" id="scoreVerdict">—</div>
+      <!-- Score + Summary row -->
+      <div class="summary-row">
+        <div class="score-card">
+          <div class="score-label">MIX SCORE</div>
+          <div class="score-display">
+            <svg class="score-svg" viewBox="0 0 110 110" aria-hidden="true">
+              <circle cx="55" cy="55" r="46" class="score-track"/>
+              <circle cx="55" cy="55" r="46" class="score-arc" id="scoreArc" stroke-dasharray="289" stroke-dashoffset="289"/>
+            </svg>
+            <div class="score-inner">
+              <span class="score-num" id="scoreNum">—</span>
+              <span class="score-denom">/100</span>
+            </div>
+          </div>
+          <div class="score-grade" id="scoreGrade">—</div>
         </div>
-        <div class="score-ring-wrap" aria-hidden="true">
-          <svg class="score-ring" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="50" class="ring-track"/>
-            <circle cx="60" cy="60" r="50" class="ring-fill" id="ringFill"
-              stroke-dasharray="314"
-              stroke-dashoffset="314"/>
-          </svg>
-          <span class="score-ring-num" id="ringNum">0</span>
+
+        <div class="quick-metrics">
+          <div class="qm-item" id="qm-peak">
+            <div class="qm-label">PEAK</div>
+            <div class="qm-value" id="qmPeak">—</div>
+            <div class="qm-status" id="qmPeakS">—</div>
+          </div>
+          <div class="qm-divider"></div>
+          <div class="qm-item" id="qm-rms">
+            <div class="qm-label">LOUDNESS (RMS)</div>
+            <div class="qm-value" id="qmRms">—</div>
+            <div class="qm-status" id="qmRmsS">—</div>
+          </div>
+          <div class="qm-divider"></div>
+          <div class="qm-item" id="qm-dr">
+            <div class="qm-label">DYNAMIC RANGE</div>
+            <div class="qm-value" id="qmDr">—</div>
+            <div class="qm-status" id="qmDrS">—</div>
+          </div>
+          <div class="qm-divider"></div>
+          <div class="qm-item" id="qm-stereo">
+            <div class="qm-label">STEREO CORR.</div>
+            <div class="qm-value" id="qmStereo">—</div>
+            <div class="qm-status" id="qmStereoS">—</div>
+          </div>
+          <div class="qm-divider"></div>
+          <div class="qm-item" id="qm-clip">
+            <div class="qm-label">CLIPPING</div>
+            <div class="qm-value" id="qmClip">—</div>
+            <div class="qm-status" id="qmClipS">—</div>
+          </div>
         </div>
       </div>
-
-      <!-- Issue Cards -->
-      <div class="issues-header">
-        <h2 class="section-title">Issues Detected</h2>
-        <span class="issue-count" id="issueCount">0 issues</span>
-      </div>
-      <div class="issue-list" id="issueList" role="list"></div>
-
-      <!-- Metrics Grid -->
-      <h2 class="section-title" style="margin-top:2.5rem">Technical Metrics</h2>
-      <div class="metrics-grid">
-
-        <div class="metric-card" id="mc-peak">
-          <div class="metric-head">
-            <span class="metric-name">Peak Level</span>
-            <span class="metric-badge" id="badge-peak">—</span>
-          </div>
-          <div class="metric-value" id="val-peak">—</div>
-          <div class="metric-bar-wrap"><div class="metric-bar" id="bar-peak"></div></div>
-          <p class="metric-tip" id="tip-peak">—</p>
-        </div>
-
-        <div class="metric-card" id="mc-rms">
-          <div class="metric-head">
-            <span class="metric-name">RMS Loudness</span>
-            <span class="metric-badge" id="badge-rms">—</span>
-          </div>
-          <div class="metric-value" id="val-rms">—</div>
-          <div class="metric-bar-wrap"><div class="metric-bar" id="bar-rms"></div></div>
-          <p class="metric-tip" id="tip-rms">—</p>
-        </div>
-
-        <div class="metric-card" id="mc-dr">
-          <div class="metric-head">
-            <span class="metric-name">Dynamic Range</span>
-            <span class="metric-badge" id="badge-dr">—</span>
-          </div>
-          <div class="metric-value" id="val-dr">—</div>
-          <div class="metric-bar-wrap"><div class="metric-bar" id="bar-dr"></div></div>
-          <p class="metric-tip" id="tip-dr">—</p>
-        </div>
-
-        <div class="metric-card" id="mc-stereo">
-          <div class="metric-head">
-            <span class="metric-name">Stereo Correlation</span>
-            <span class="metric-badge" id="badge-stereo">—</span>
-          </div>
-          <div class="metric-value" id="val-stereo">—</div>
-          <div class="metric-bar-wrap"><div class="metric-bar" id="bar-stereo"></div></div>
-          <p class="metric-tip" id="tip-stereo">—</p>
-        </div>
-
-        <div class="metric-card" id="mc-clip">
-          <div class="metric-head">
-            <span class="metric-name">Clipping</span>
-            <span class="metric-badge" id="badge-clip">—</span>
-          </div>
-          <div class="metric-value" id="val-clip">—</div>
-          <div class="metric-bar-wrap"><div class="metric-bar" id="bar-clip"></div></div>
-          <p class="metric-tip" id="tip-clip">—</p>
-        </div>
-
-        <div class="metric-card" id="mc-crest">
-          <div class="metric-head">
-            <span class="metric-name">Crest Factor</span>
-            <span class="metric-badge" id="badge-crest">—</span>
-          </div>
-          <div class="metric-value" id="val-crest">—</div>
-          <div class="metric-bar-wrap"><div class="metric-bar" id="bar-crest"></div></div>
-          <p class="metric-tip" id="tip-crest">—</p>
-        </div>
-
-      </div>
-
-      <!-- Frequency Balance -->
-      <h2 class="section-title" style="margin-top:2.5rem">Frequency Balance</h2>
-      <div class="freq-grid" id="freqGrid"></div>
 
       <!-- Waveform -->
-      <h2 class="section-title" style="margin-top:2.5rem">Waveform</h2>
-      <div class="canvas-wrap">
-        <canvas id="waveformCanvas" aria-label="Waveform visualization"></canvas>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">WAVEFORM</span><span class="panel-hint" id="waveHint"></span></div>
+        <canvas id="waveCanvas"></canvas>
       </div>
 
       <!-- Spectrum -->
-      <h2 class="section-title" style="margin-top:2rem">Frequency Spectrum</h2>
-      <div class="canvas-wrap">
-        <canvas id="spectrumCanvas" aria-label="Frequency spectrum visualization"></canvas>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">FREQUENCY SPECTRUM</span></div>
+        <canvas id="specCanvas"></canvas>
       </div>
 
-      <!-- Action Suggestions -->
-      <h2 class="section-title" style="margin-top:2.5rem">Recommended Actions</h2>
-      <ol class="action-list" id="actionList"></ol>
+      <!-- Freq band cards -->
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">FREQUENCY BALANCE</span></div>
+        <div class="freq-row" id="freqRow"></div>
+      </div>
 
-      <!-- Streaming Targets -->
-      <h2 class="section-title" style="margin-top:2.5rem">Streaming Platform Targets</h2>
-      <div class="platform-grid" id="platformGrid"></div>
+      <!-- Issues -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">DETECTED ISSUES</span>
+          <span class="issue-badge" id="issueBadge">0</span>
+        </div>
+        <div class="issue-list" id="issueList" role="list"></div>
+      </div>
+
+      <!-- Action plan -->
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">ACTION PLAN</span></div>
+        <ol class="action-ol" id="actionList"></ol>
+      </div>
+
+      <!-- Streaming targets -->
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">STREAMING PLATFORM READINESS</span></div>
+        <div class="platform-row" id="platformRow"></div>
+      </div>
 
     </section>
 
   </main>
 
-  <footer class="site-footer">
-    <p>MixLens · All processing happens in your browser. No audio data is uploaded anywhere.</p>
+  <footer class="footer">
+    <span>MixLens by <strong>Nickson Rizvi</strong> © 2026</span>
+    <span class="footer-dot">·</span>
+    <span>All audio processed locally — nothing leaves your browser</span>
   </footer>
 
   <script src="js/analyzer.js"></script>
