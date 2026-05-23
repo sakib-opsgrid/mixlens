@@ -106,14 +106,28 @@ body {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 12px;
-  color: var(--t3);
-  font-family: var(--ffm);
 }
 
-.header-right strong { color: var(--t2); font-weight: 500; }
-.header-year { color: var(--t4); }
+.header-artist {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.header-artist-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t1);
+  letter-spacing: -0.01em;
+}
+
+.header-artist-title {
+  font-size: 10px;
+  color: var(--t3);
+  font-family: var(--ffm);
+  letter-spacing: 0.02em;
+}
 
 /* ── Main ──────────────────────────────────────── */
 .main {
