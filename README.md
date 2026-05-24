@@ -1,6 +1,6 @@
 # MixLens — Professional Audio Analyzer
 
-**by Nickson Rizvi · 2026**
+**@ Nickson Rizvi · 2026**
 
 🌐 [Try it live in your browser →](https://sakib-opsgrid.github.io/mixlens/)
 
