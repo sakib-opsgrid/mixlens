@@ -4,7 +4,7 @@
 
 🌐 [Try it live in your browser →](https://sakib-opsgrid.github.io/mixlens/)
 
-(screenshot.png)<img width="1365" height="718" alt="screenshot" src="https://github.com/user-attachments/assets/f54efc82-ea53-4db8-b8bd-f571e32b9cff" />
+<img width="1365" height="718" alt="screenshot" src="https://github.com/user-attachments/assets/f54efc82-ea53-4db8-b8bd-f571e32b9cff" />
 
 
 A high-accuracy, browser-based professional audio analysis tool for musicians, producers, and audio engineers. Zero server uploads — all processing runs locally in your browser using the Web Audio API.
