@@ -1,16 +1,80 @@
-MIT License
-Copyright (c) 2026 Nickson Rizvi
+MixLens — End User License Agreement (EULA)
+Version 1.0.0
+Copyright © 2026 Nickson Rizvi
+All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+PLEASE READ THIS AGREEMENT CAREFULLY BEFORE INSTALLING OR USING MIXLENS.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+By installing, copying, accessing, or using MixLens, you agree to be bound by the terms of this End User License Agreement (“Agreement”). If you do not agree to these terms, do not install or use the software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+1. LICENSE GRANT
+
+Nickson Rizvi grants you a limited, non-exclusive, non-transferable, non-sublicensable, and revocable license to install and use MixLens solely for personal or professional audio production purposes.
+
+2. RESTRICTIONS
+
+You may NOT:
+
+- Modify, adapt, reverse engineer, decompile, disassemble, or attempt to derive the source code of the software
+- Redistribute, sublicense, lease, rent, sell, or transfer the software to any third party
+- Copy or reproduce the software except where explicitly permitted by law
+- Remove, alter, or obscure any copyright, trademark, logo, or proprietary notices
+
+3. INTELLECTUAL PROPERTY
+
+MixLens, including all source code, algorithms, UI/UX design, branding, graphics, audio analysis systems, documentation, and associated assets, is and shall remain the exclusive intellectual property of Nickson Rizvi.
+
+No ownership rights are transferred under this Agreement.
+
+4. PRIVACY
+
+MixLens processes all audio and analysis data locally on the user’s device.
+
+No audio files, project data, analysis results, or personal information are transmitted, uploaded, or shared with external servers or third parties.
+
+5. DISCLAIMER OF WARRANTIES
+
+MixLens is provided “AS IS” and “AS AVAILABLE” without warranties of any kind, whether express or implied.
+
+Nickson Rizvi disclaims all warranties including, but not limited to:
+
+- Merchantability
+- Fitness for a particular purpose
+- Non-infringement
+- Accuracy or reliability of analysis results
+
+The user assumes full responsibility for the use of the software and any production decisions based on its analysis.
+
+6. LIMITATION OF LIABILITY
+
+Under no circumstances shall Nickson Rizvi be liable for any indirect, incidental, consequential, special, exemplary, or punitive damages arising from:
+
+- The use or inability to use MixLens
+- Loss of audio projects, profits, business, or data
+- Software malfunction or inaccurate analysis
+
+Even if advised of the possibility of such damages.
+
+7. TERMINATION
+
+This license shall automatically terminate if you violate any provision of this Agreement.
+
+Upon termination, you must cease all use of MixLens and remove all copies from your devices.
+
+8. GOVERNING LAW
+
+This Agreement shall be governed and interpreted in accordance with the laws of Bangladesh.
+
+Any disputes arising from this Agreement shall be subject to the jurisdiction of the courts of Bangladesh.
+
+9. ENTIRE AGREEMENT
+
+This Agreement constitutes the complete and exclusive agreement regarding MixLens and supersedes all prior agreements or understandings.
+
+--------------------------------------------------
+
+Nickson Rizvi
+Singer-songwriter & Music Producer
+Creator of MixLens
+
+© 2026 Nickson Rizvi. All Rights Reserved.
