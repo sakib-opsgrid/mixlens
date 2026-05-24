@@ -2,6 +2,8 @@
 
 **by Nickson Rizvi · 2026**
 
+🌐 [Try it live in your browser →](https://sakib-opsgrid.github.io/mixlens/)
+
 A high-accuracy, browser-based professional audio analysis tool for musicians, producers, and audio engineers. Zero server uploads — all processing runs locally in your browser using the Web Audio API.
 
 ---
