@@ -31,7 +31,7 @@ WAV · MP3 · AIFF · OGG · FLAC *(FLAC support depends on browser — Chrome r
 ### Open directly (no build step)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/mixlens.git
+git clone https://github.com/sakib-opsgrid/mixlens.git
 cd mixlens
 open index.html          # macOS
 xdg-open index.html      # Linux
