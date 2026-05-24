@@ -174,6 +174,69 @@
         <div class="platform-row" id="platformRow"></div>
       </div>
 
+      <!-- Smart Mix Advisor -->
+      <div class="panel" id="advisorPanel">
+        <div class="panel-head">
+          <span class="panel-title">SMART MIX ADVISOR</span>
+          <span class="panel-hint">Adjust sliders — live guidance on what to fix and why</span>
+        </div>
+        <div class="advisor-wrap">
+          <div class="adv-score-row">
+            <div class="adv-score-left">
+              <span class="adv-score-label">ADVISOR SCORE</span>
+              <span class="adv-score-num" id="advScore">—</span>
+              <span class="adv-score-grade" id="advGrade">—</span>
+            </div>
+            <div class="adv-bar-outer"><div class="adv-bar" id="advBar"></div></div>
+          </div>
+          <div class="adv-section">
+            <div class="adv-sec-title">LOUDNESS — Target LUFS</div>
+            <div class="adv-row">
+              <span class="adv-label">Target LUFS <span class="adv-pill" id="adv-badge-lufs">—</span></span>
+              <input type="range" id="adv-sl-lufs" min="-24" max="-6" step="0.5" value="-18.5"/>
+              <span class="adv-val" id="adv-val-lufs">−18.5</span>
+            </div>
+            <div class="adv-tip" id="adv-tip-lufs">
+              <div class="adv-tip-main" id="adv-tip-lufs-main"></div>
+              <div class="adv-tip-why" id="adv-tip-lufs-why"></div>
+              <div class="adv-tip-tool">Tool: <code>iZotope Ozone Maximizer</code> · <code>FabFilter Pro-L 2</code></div>
+            </div>
+          </div>
+          <div class="adv-section">
+            <div class="adv-sec-title">BUS COMPRESSION — Ratio</div>
+            <div class="adv-row">
+              <span class="adv-label">Bus Ratio <span class="adv-pill" id="adv-badge-comp">—</span></span>
+              <input type="range" id="adv-sl-comp" min="1" max="10" step="0.5" value="1"/>
+              <span class="adv-val" id="adv-val-comp">1:1</span>
+            </div>
+            <div class="adv-tip" id="adv-tip-comp">
+              <div class="adv-tip-main" id="adv-tip-comp-main"></div>
+              <div class="adv-tip-why" id="adv-tip-comp-why"></div>
+              <div class="adv-tip-tool">Tool: <code>SSL G-Bus Compressor</code> · <code>Ozone Dynamics</code></div>
+            </div>
+          </div>
+          <div class="adv-divider"></div>
+          <div class="adv-sec-title" style="padding:0 1.25rem .75rem">EQ — FREQUENCY BALANCE</div>
+          <div id="adv-bands-wrap"></div>
+          <div class="adv-divider"></div>
+          <div class="adv-section">
+            <div class="adv-sec-title">STEREO WIDTH</div>
+            <div class="adv-row">
+              <span class="adv-label">Width <span class="adv-pill" id="adv-badge-width">—</span></span>
+              <input type="range" id="adv-sl-width" min="-100" max="100" step="1" value="0"/>
+              <span class="adv-val" id="adv-val-width">0%</span>
+            </div>
+            <div class="adv-tip" id="adv-tip-width">
+              <div class="adv-tip-main" id="adv-tip-width-main"></div>
+              <div class="adv-tip-tool">Tool: <code>Ozone Imager</code> · <code>SPAN Plus</code> · <code>Voxengo MSED</code></div>
+            </div>
+          </div>
+          <div class="adv-verdict-wrap">
+            <div class="adv-verdict" id="advVerdict">Adjust sliders to see real-time feedback.</div>
+          </div>
+        </div>
+      </div>
+
     </section>
 
   </main>
